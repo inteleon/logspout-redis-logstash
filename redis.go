@@ -32,6 +32,7 @@ const (
 type RedisAdapter struct {
 	route         *router.Route
 	pool          *redis.Pool
+	conn          redis.Conn
 	key           string
 	docker_host   string
 	use_v0        bool
@@ -145,15 +146,15 @@ func NewRedisAdapter(route *router.Route) (router.LogAdapter, error) {
 }
 
 func (a *RedisAdapter) Stream(logstream chan *router.Message) {
-	conn := a.pool.Get()
-	defer conn.Close()
+	a.conn = a.pool.Get()
+	defer a.conn.Close()
 
 	for m := range logstream {
-		go a.pushMsg(conn, m)
+		go a.pushMsg(m)
 	}
 }
 
-func (a *RedisAdapter) pushMsg(conn redis.Conn, m *router.Message) {
+func (a *RedisAdapter) pushMsg(m *router.Message) {
 	a.msg_counter += 1
 	msg_id := fmt.Sprintf("%s#%d", m.Container.ID[0:12], a.msg_counter)
 
@@ -164,19 +165,19 @@ func (a *RedisAdapter) pushMsg(conn redis.Conn, m *router.Message) {
 
 		return
 	}
-	_, err = conn.Do("RPUSH", a.key, js)
+	_, err = a.conn.Do("RPUSH", a.key, js)
 	if err != nil {
 		log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
-		log.Printf("redis[%s]: redis conn.Err() value: %s\n", msg_id, conn.Err())
+		log.Printf("redis[%s]: redis a.conn.Err() value: %s\n", msg_id, a.conn.Err())
 
-		conn.Close()
-		conn = a.pool.Get()
+		a.conn.Close()
+		a.conn = a.pool.Get()
 
 		// Sleep 1 second between retries.
 		time.Sleep(1 * time.Second)
 
 		log.Printf("redis[%s]: retrying...\n", msg_id)
-		a.pushMsg(conn, m)
+		a.pushMsg(m)
 
 		return
 	}
