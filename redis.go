@@ -167,6 +167,7 @@ func (a *RedisAdapter) pushMsg(conn redis.Conn, m *router.Message) {
 	_, err = conn.Do("RPUSH", a.key, js)
 	if err != nil {
 		log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
+		log.Printf("redis[%s]: redis conn.Err() value: %s\n", msg_id, conn.Err())
 
 		conn.Close()
 		conn = a.pool.Get()
