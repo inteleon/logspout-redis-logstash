@@ -198,6 +198,7 @@ func (a *RedisAdapter) Stream(logstream chan *router.Message) {
 
 			continue
 		} else {
+			log.Printf("redis[%s]: msg successfully pushed\n", msg_id)
 			if mute {
 				log.Printf("redis[%s]: successful rpush after error\n", msg_id)
 				mute = false
