@@ -170,7 +170,10 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 		log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
 		log.Printf("redis[%s]: redis a.conn.Err() value: %s\n", msg_id, a.conn.Err())
 
-		a.conn.Close()
+		closeConnErr := a.conn.Close()
+		if closeConnErr != nil {
+			log.Printf("redis[%s]: error closing connection: %s\n", msg_id, closeConnErr)
+		}
 		a.conn = a.pool.Get()
 
 		// Sleep 1 second between retries.
