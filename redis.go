@@ -172,7 +172,7 @@ func (a *RedisAdapter) pushMsg(conn redis.Conn, m *router.Message) {
 		time.Sleep(1 * time.Second)
 
 		log.Printf("redis[%s]: retrying...\n", msg_id)
-		a.pushMsg(m)
+		a.pushMsg(conn, m)
 
 		return
 	}
