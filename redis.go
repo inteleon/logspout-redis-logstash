@@ -111,7 +111,7 @@ func NewRedisAdapter(route *router.Route) (router.LogAdapter, error) {
 	if debug {
 		log.Printf("Using Redis server '%s', dbnum: %d, password?: %t, pushkey: '%s', v0 layout?: %t, logstash type: '%s'\n",
 			address, database, password != "", key, use_v0, logstash_type)
-        log.Printf("Dedotting docker labels: %t", dedot_labels)
+		log.Printf("Dedotting docker labels: %t", dedot_labels)
 		log.Printf("Timeouts set, connect: %dms, read: %dms, write: %dms\n", connect_timeout, read_timeout, write_timeout)
 	}
 	if connect_timeout+read_timeout+write_timeout > 950 {
@@ -155,6 +155,7 @@ func (a *RedisAdapter) Stream(logstream chan *router.Message) {
 		msg_id := fmt.Sprintf("%s#%d", m.Container.ID[0:12], a.msg_counter)
 
 		js, err := createLogstashMessage(m, a.docker_host, a.use_v0, a.logstash_type, a.dedot_labels)
+		log.Printf("redis[%s]: msg to save: %s\n", msg_id, string(js))
 		if err != nil {
 			if a.mute_errors {
 				if !mute {
