@@ -148,63 +148,41 @@ func (a *RedisAdapter) Stream(logstream chan *router.Message) {
 	conn := a.pool.Get()
 	defer conn.Close()
 
-	mute := false
-
 	for m := range logstream {
-		a.msg_counter += 1
-		msg_id := fmt.Sprintf("%s#%d", m.Container.ID[0:12], a.msg_counter)
-
-		log.Printf("redis[%s]: saving message from the following container: %s\n", msg_id, m.Container.Name)
-		js, err := createLogstashMessage(m, a.docker_host, a.use_v0, a.logstash_type, a.dedot_labels)
-		if err != nil {
-			if a.mute_errors {
-				if !mute {
-					log.Printf("redis[%s]: error on json.Marshal (muting until recovered): %s\n", msg_id, err)
-					mute = true
-				}
-			} else {
-				log.Printf("redis[%s]: error on json.Marshal: %s\n", msg_id, err)
-			}
-			continue
-		}
-		_, err = conn.Do("RPUSH", a.key, js)
-		if err != nil {
-			if a.mute_errors {
-				if !mute {
-					log.Printf("redis[%s]: error on rpush (muting until restored): %s\n", msg_id, err)
-				}
-			} else {
-				log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
-			}
-			mute = true
-
-			// first close old connection
-			conn.Close()
-
-			// next open new connection
-			conn = a.pool.Get()
-
-			// since message is already marshaled, send again
-			_, err = conn.Do("RPUSH", a.key, js)
-			if err != nil {
-				conn.Close()
-				if !a.mute_errors {
-					log.Printf("redis[%s]: error on rpush (retry): %s\n", msg_id, err)
-				}
-			} else {
-				log.Printf("redis[%s]: successful retry rpush after error\n", msg_id)
-				mute = false
-			}
-
-			continue
-		} else {
-			if mute {
-				log.Printf("redis[%s]: successful rpush after error\n", msg_id)
-				mute = false
-			}
-		}
-		log.Printf("redis[%s]: msg successfully pushed\n", msg_id)
+		go a.pushMsg(conn, m)
 	}
+}
+
+func (a *RedisAdapter) pushMsg(conn redis.Conn, m *router.Message) {
+	a.msg_counter += 1
+	msg_id := fmt.Sprintf("%s#%d", m.Container.ID[0:12], a.msg_counter)
+
+	log.Printf("redis[%s]: pushing message from the following container: %s\n", msg_id, m.Container.Name)
+	js, err := createLogstashMessage(m, a.docker_host, a.use_v0, a.logstash_type, a.dedot_labels)
+	if err != nil {
+		log.Printf("redis[%s]: error on json.Marshal: %s\n", msg_id, err)
+
+		return
+	}
+	_, err = conn.Do("RPUSH", a.key, js)
+	if err != nil {
+		log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
+
+		// first close old connection
+		conn.Close()
+
+		// next open new connection
+		conn = a.pool.Get()
+
+		// Sleep 1 second between retries.
+		time.Sleep(1 * time.Second)
+
+		a.pushMsg(conn, m)
+
+		return
+	}
+
+	log.Printf("redis[%s]: msg successfully pushed\n", msg_id)
 }
 
 func errorf(format string, a ...interface{}) (err error) {
