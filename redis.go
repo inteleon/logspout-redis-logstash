@@ -40,6 +40,7 @@ type RedisAdapter struct {
 	dedot_labels  bool
 	mute_errors   bool
 	msg_counter   int
+	debug         bool
 }
 
 type DockerFields struct {
@@ -142,6 +143,7 @@ func NewRedisAdapter(route *router.Route) (router.LogAdapter, error) {
 		dedot_labels:  dedot_labels,
 		mute_errors:   mute_errors,
 		msg_counter:   0,
+		debug:         debug,
 	}, nil
 }
 
@@ -158,7 +160,10 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 	a.msg_counter += 1
 	msg_id := fmt.Sprintf("%s#%d", m.Container.ID[0:12], a.msg_counter)
 
-	log.Printf("redis[%s]: pushing message from the following container: %s\n", msg_id, m.Container.Name)
+	if debug {
+		log.Printf("redis[%s]: pushing message from the following container: %s\n", msg_id, m.Container.Name)
+	}
+
 	js, err := createLogstashMessage(m, a.docker_host, a.use_v0, a.logstash_type, a.dedot_labels)
 	if err != nil {
 		log.Printf("redis[%s]: error on json.Marshal: %s\n", msg_id, err)
@@ -185,7 +190,9 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 		return
 	}
 
-	log.Printf("redis[%s]: msg successfully pushed\n", msg_id)
+	if debug {
+		log.Printf("redis[%s]: msg successfully pushed\n", msg_id)
+	}
 }
 
 func errorf(format string, a ...interface{}) (err error) {
