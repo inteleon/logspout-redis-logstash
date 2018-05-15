@@ -177,6 +177,7 @@ func (a *RedisAdapter) pushMsg(conn redis.Conn, m *router.Message) {
 		// Sleep 1 second between retries.
 		time.Sleep(1 * time.Second)
 
+		log.Printf("redis[%s]: retrying...\n", msg_id)
 		a.pushMsg(conn, m)
 
 		return
