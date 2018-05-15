@@ -154,7 +154,7 @@ func (a *RedisAdapter) Stream(logstream chan *router.Message) {
 		a.msg_counter += 1
 		msg_id := fmt.Sprintf("%s#%d", m.Container.ID[0:12], a.msg_counter)
 
-		log.Printf("redis[%s]: msg to save: %s\n", msg_id, m.Source)
+		log.Printf("redis[%s]: saving message from the following container: %s\n", msg_id, m.Container.Name)
 		js, err := createLogstashMessage(m, a.docker_host, a.use_v0, a.logstash_type, a.dedot_labels)
 		if err != nil {
 			if a.mute_errors {
