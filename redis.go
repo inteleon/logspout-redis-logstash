@@ -160,7 +160,7 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 	a.msg_counter += 1
 	msg_id := fmt.Sprintf("%s#%d", m.Container.ID[0:12], a.msg_counter)
 
-	if debug {
+	if a.debug {
 		log.Printf("redis[%s]: pushing message from the following container: %s\n", msg_id, m.Container.Name)
 	}
 
@@ -190,7 +190,7 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 		return
 	}
 
-	if debug {
+	if a.debug {
 		log.Printf("redis[%s]: msg successfully pushed\n", msg_id)
 	}
 }
