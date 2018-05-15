@@ -145,15 +145,15 @@ func NewRedisAdapter(route *router.Route) (router.LogAdapter, error) {
 }
 
 func (a *RedisAdapter) Stream(logstream chan *router.Message) {
-	for m := range logstream {
-		go a.pushMsg(m)
-	}
-}
-
-func (a *RedisAdapter) pushMsg(m *router.Message) {
 	conn := a.pool.Get()
 	defer conn.Close()
 
+	for m := range logstream {
+		go a.pushMsg(conn, m)
+	}
+}
+
+func (a *RedisAdapter) pushMsg(conn redis.Conn, m *router.Message) {
 	a.msg_counter += 1
 	msg_id := fmt.Sprintf("%s#%d", m.Container.ID[0:12], a.msg_counter)
 
