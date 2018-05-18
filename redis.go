@@ -58,22 +58,22 @@ type LogstashFields struct {
 }
 
 type LogstashMessageV0 struct {
-	Type       string         `json:"@type,omitempty"`
-	Timestamp  string         `json:"@timestamp"`
-	Flesmu     string         `json:"@flesmu"`
-	Hackerjohn string         `json:"@hackerjohn"`
-	Sourcehost string         `json:"@source_host"`
-	Message    string         `json:"@message"`
-	Fields     LogstashFields `json:"@fields"`
+	Type           string         `json:"@type,omitempty"`
+	Timestamp      string         `json:"@timestamp"`
+	EventTimestamp string         `json:"@event_timestamp"`
+	Sourcehost     string         `json:"@source_host"`
+	Message        string         `json:"@message"`
+	Fields         LogstashFields `json:"@fields"`
 }
 
 type LogstashMessageV1 struct {
-	Type       string       `json:"@type,omitempty"`
-	Timestamp  string       `json:"@timestamp"`
-	Sourcehost string       `json:"host"`
-	Message    string       `json:"message"`
-	Fields     DockerFields `json:"docker"`
-	Logtype    string       `json:"logtype,omitempty"`
+	Type           string       `json:"@type,omitempty"`
+	Timestamp      string       `json:"@timestamp"`
+	EventTimestamp string       `json:"@event_timestamp"`
+	Sourcehost     string       `json:"host"`
+	Message        string       `json:"message"`
+	Fields         DockerFields `json:"docker"`
+	Logtype        string       `json:"logtype,omitempty"`
 	// Only one of the following 3 is initialized and used, depending on the incoming json:logtype
 	LogtypeAccessfields map[string]interface{} `json:"accesslog,omitempty"`
 	LogtypeAppfields    map[string]interface{} `json:"applog,omitempty"`
@@ -304,8 +304,7 @@ func createLogstashMessage(m *router.Message, docker_host string, use_v0 bool, l
 
 		msg.Type = logstash_type
 		msg.Timestamp = timestamp
-		msg.Flesmu = timestamp
-		msg.Hackerjohn = timestamp
+		msg.EventTimestamp = timestamp
 		msg.Message = m.Data
 		msg.Sourcehost = m.Container.Config.Hostname
 		msg.Fields.Docker.CID = cid
@@ -328,6 +327,7 @@ func createLogstashMessage(m *router.Message, docker_host string, use_v0 bool, l
 
 		msg.Type = logstash_type
 		msg.Timestamp = timestamp
+		msg.EventTimestamp = timestamp
 		msg.Sourcehost = m.Container.Config.Hostname
 		msg.Fields.CID = cid
 		msg.Fields.Name = name
