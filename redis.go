@@ -61,6 +61,7 @@ type LogstashMessageV0 struct {
 	Type       string         `json:"@type,omitempty"`
 	Timestamp  string         `json:"@timestamp"`
 	Flesmu     string         `json:"@flesmu"`
+	Hackerjohn string         `json:"@hackerjohn"`
 	Sourcehost string         `json:"@source_host"`
 	Message    string         `json:"@message"`
 	Fields     LogstashFields `json:"@fields"`
@@ -304,6 +305,7 @@ func createLogstashMessage(m *router.Message, docker_host string, use_v0 bool, l
 		msg.Type = logstash_type
 		msg.Timestamp = timestamp
 		msg.Flesmu = timestamp
+		msg.Hackerjohn = timestamp
 		msg.Message = m.Data
 		msg.Sourcehost = m.Container.Config.Hostname
 		msg.Fields.Docker.CID = cid
