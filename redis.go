@@ -59,7 +59,7 @@ type LogstashFields struct {
 
 type LogstashMessageV0 struct {
 	Type       string         `json:"@type,omitempty"`
-	Timestamp  string         `json:"@timestamp"`
+	Timestamp  string         `json:"@flesmu"`
 	Sourcehost string         `json:"@source_host"`
 	Message    string         `json:"@message"`
 	Fields     LogstashFields `json:"@fields"`
