@@ -32,7 +32,6 @@ const (
 type RedisAdapter struct {
 	route         *router.Route
 	pool          *redis.Pool
-	conn          redis.Conn
 	key           string
 	docker_host   string
 	use_v0        bool
@@ -150,8 +149,6 @@ func NewRedisAdapter(route *router.Route) (router.LogAdapter, error) {
 }
 
 func (a *RedisAdapter) Stream(logstream chan *router.Message) {
-	a.conn = a.pool.Get()
-	defer a.conn.Close()
 
 	for m := range logstream {
 		go a.pushMsg(m)
@@ -173,6 +170,9 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 		return
 	}
 
+	conn := a.pool.Get()
+	defer conn.Close()
+
 	// Capture panics and log them.
 	defer func() {
 		if r := recover(); r != nil {
@@ -180,16 +180,10 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 		}
 	}()
 
-	_, err = a.conn.Do("RPUSH", a.key, js)
+	_, err = conn.Do("RPUSH", a.key, js)
 	if err != nil {
 		log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
-		log.Printf("redis[%s]: redis a.conn.Err() value: %s\n", msg_id, a.conn.Err())
-
-		closeConnErr := a.conn.Close()
-		if closeConnErr != nil {
-			log.Printf("redis[%s]: error closing connection: %s\n", msg_id, closeConnErr)
-		}
-		a.conn = a.pool.Get()
+		log.Printf("redis[%s]: redis conn.Err() value: %s\n", msg_id, conn.Err())
 
 		// Sleep 1 second between retries.
 		time.Sleep(1 * time.Second)
@@ -243,7 +237,7 @@ func getintopt(options map[string]string, optkey string, envkey string, default_
 
 func newRedisConnectionPool(server, password string, database int, connect_timeout int, read_timeout int, write_timeout int) *redis.Pool {
 	return &redis.Pool{
-		MaxIdle:     1,
+		MaxIdle:     10,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", server,
