@@ -172,6 +172,14 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 
 		return
 	}
+
+	// Capture panics and log them.
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("redis[%s]: PANIC!\na.key: %s\nlogstashmsg: %s\nRecover: %s\n", msg_id, a.key, js, r)
+		}
+	}()
+
 	_, err = a.conn.Do("RPUSH", a.key, js)
 	if err != nil {
 		log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
