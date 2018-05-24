@@ -284,15 +284,21 @@ func splitImage(image_tag string) (image string, tag string) {
 }
 
 func dedotLabels(labels map[string]string) map[string]string {
-	for key, _ := range labels {
+	// Copy the map first to a local variable.
+	formattedLabels := map[string]string{}
+	for k, v := range labels {
+		formattedLabels[k] = v
+	}
+
+	for key, _ := range formattedLabels {
 		if strings.Contains(key, ".") {
 			dedotted_label := strings.Replace(key, ".", "_", -1)
-			labels[dedotted_label] = labels[key]
-			delete(labels, key)
+			formattedLabels[dedotted_label] = formattedLabels[key]
+			delete(formattedLabels, key)
 		}
 	}
 
-	return labels
+	return formattedLabels
 }
 
 func createLogstashMessage(m *router.Message, docker_host string, use_v0 bool, logstash_type string, dedot_labels bool) ([]byte, error) {
