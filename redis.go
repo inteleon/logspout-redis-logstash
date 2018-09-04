@@ -90,6 +90,8 @@ func NewRedisAdapter(route *router.Route) (router.LogAdapter, error) {
 		address = address + ":6379"
 	}
 
+	log.Printf("route.Options: %#v", route.Options)
+
 	// get our config keys, first from the route options (e.g. redis://<host>?opt1=val&opt1=val&...)
 	// if route option is missing, attempt to get the value from the environment
 	key := getopt(route.Options, "key", "REDIS_KEY", "logspout")
