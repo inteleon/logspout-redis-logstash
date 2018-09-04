@@ -210,13 +210,22 @@ func errorf(format string, a ...interface{}) (err error) {
 }
 
 func getopt(options map[string]string, optkey string, envkey string, default_value string) (value string) {
+	log.Printf("getopt() executed")
+	log.Printf("options: %#v", options)
+	log.Printf("optkey: %#v", optkey)
+	log.Printf("envkey: %#v", envkey)
+	log.Printf("default_value: %#v", default_value)
+
 	value = options[optkey]
 	if value == "" {
+		log.Printf("Value not found in options, trying environment...")
 		value = os.Getenv(envkey)
 		if value == "" {
 			value = default_value
 		}
 	}
+
+	log.Printf("Value to return: %#v", value)
 	return
 }
 func getintopt(options map[string]string, optkey string, envkey string, default_value int) (value int) {
