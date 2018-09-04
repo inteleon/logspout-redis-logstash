@@ -182,13 +182,17 @@ func (a *RedisAdapter) pushMsg(m *router.Message) {
 
 	_, err = conn.Do("RPUSH", a.key, js)
 	if err != nil {
-		log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
-		log.Printf("redis[%s]: redis conn.Err() value: %s\n", msg_id, conn.Err())
+		if a.debug {
+			log.Printf("redis[%s]: error on rpush: %s\n", msg_id, err)
+			log.Printf("redis[%s]: redis conn.Err() value: %s\n", msg_id, conn.Err())
+		}
 
 		// Sleep 1 second between retries.
 		time.Sleep(1 * time.Second)
 
-		log.Printf("redis[%s]: retrying...\n", msg_id)
+		if a.debug {
+			log.Printf("redis[%s]: retrying...\n", msg_id)
+		}
 		a.pushMsg(m)
 
 		return
