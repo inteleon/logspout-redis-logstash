@@ -250,6 +250,7 @@ func newRedisConnectionPool(server, password string, database int, connect_timeo
 				redis.DialReadTimeout(time.Duration(read_timeout)*time.Millisecond),
 				redis.DialWriteTimeout(time.Duration(write_timeout)*time.Millisecond))
 			if err != nil {
+				log.Printf("Unable to dial to redis: %s", err)
 				return nil, err
 			}
 			if password != "" {
@@ -261,6 +262,8 @@ func newRedisConnectionPool(server, password string, database int, connect_timeo
 			if database > 0 {
 				if _, err := c.Do("SELECT", database); err != nil {
 					c.Close()
+
+					log.Printf("Unable to select database %s: %s", database, err)
 					return nil, err
 				}
 			}
